@@ -1,18 +1,21 @@
 import atomica as at
-from at_tools import get_latest_project, verify_model, get_desktop_folder, get_apps_folder, get_paths, stitch_frameworks, fill_assumptions_as_data, run_reconciliation
 import pandas as pd
 from collections import defaultdict
 import matplotlib.pyplot as plt
-import gcat as gc
+import os
 from os import sep
 import numpy as np
-import sciris as sc
-import mnch
+import constants
 
 # np.seterr(all='raise')
 at.logger.setLevel('DEBUG')
 regions = ['SSA']#, 'SSA', 'SA']
 coverage_scenarios_max = ['60']
+
+# Folder containing the framework/, databooks/, calibrations/, progset/ and results/ subfolders.
+# Update this path to point at your own copy of the analyses folder.
+analyses_folder = r'C:\Users\tom.walsh\Projects\A-coupled-model-analyses'
+framework_path = os.path.join(analyses_folder, 'framework', 'MNCHdt - stitched framework_20230904.xlsx')
 
 
 def get_epi_df(scenarios):
@@ -87,7 +90,7 @@ timeseries = np.arange(2015, 2051, 1).tolist()
 
 for region in regions:
   for coverage_scenario_max in coverage_scenarios_max:
-    coverage_scenarios = pd.read_excel(f"C://Users//Tom.walsh//Documents//GitHub//cat-mnch//paper//progset//Coverage scenarios_{coverage_scenario_max}%.xlsx", region)
+    coverage_scenarios = pd.read_excel(os.path.join(analyses_folder, 'progset', f'Coverage scenarios_{coverage_scenario_max}%.xlsx'), region)
 
     # SOC - used in SOC scenario
     soc_first_trimester_hb_test_coverage = at.TimeSeries(timeseries, coverage_scenarios.loc[coverage_scenarios["Product"] == 'soc_first_trimester_hb_test_coverage', 2015:2050].div(dt).values.tolist()[0])
@@ -141,26 +144,26 @@ for region in regions:
 
     #Set paths
 
-    results_dir = "C:\\Users\\Tom.walsh\\Documents\\GitHub\\cat-mnch\\results"
-    databook_path = 'C:\\Users\\Tom.walsh\\Documents\\GitHub\\cat-mnch\\paper\\databooks\\' + region + '.xlsx'
-    calibration_path = 'C:\\Users\Tom.walsh\\Documents\\GitHub\\cat-mnch\\paper\\calibrations\\' + region + '_calibration.xlsx'
+    results_dir = os.path.join(analyses_folder, 'results')
+    databook_path = os.path.join(analyses_folder, 'databooks', region + '.xlsx')
+    calibration_path = os.path.join(analyses_folder, 'calibrations', region + '_calibration.xlsx')
 
     #import Program and calibrate
-    F = at.ProjectFramework(f'C:\\Users\\Tom.walsh\\Documents\\GitHub\\cat-mnch\\paper\\Framework\\MNCHdt - stitched framework_20230904.xlsx')
+    F = at.ProjectFramework(framework_path)
     P = at.Project('MNCHdt', framework=F, do_run=False)
     P.load_databook(databook_path = databook_path, make_default_parset=True, do_run=False)
     P.parsets[0].load_calibration(calibration_path)
-    pset = P.load_progbook('C:\\Users\\Tom.walsh\\Documents\\GitHub\\cat-mnch\\paper\\progset\\progset.xlsx')
+    pset = P.load_progbook(os.path.join(analyses_folder, 'progset', 'progset.xlsx'))
     #P = get_latest_project('Optima MNCH', inclusions='MNCHdt', country='Demo')
 
-    P = fill_assumptions_as_data(P, years=[2020])
+    # P = fill_assumptions_as_data(P, years=[2020])
     # P.parsets['calibrated'] = P.settings.run_calibration(P)
 
     #Reconcile program set
     P.settings.update_time_vector(dt=dt)
     P.settings.sim_start = 2015
     P.settings.sim_end = 2050
-    reconciled_pset = run_reconciliation(P, P.parsets[0], P.progsets[0], results_folder=get_desktop_folder(), calib_name = 'Calibrated', recon_name = 'Current spending', reconciliation_plots=False)
+    #reconciled_pset = run_reconciliation(P, P.parsets[0], P.progsets[0], results_folder=get_desktop_folder(), calib_name = 'Calibrated', recon_name = 'Current spending', reconciliation_plots=False)
 
     scenarios = ['soc']
 
@@ -170,7 +173,7 @@ for region in regions:
       #Run scenarios
       print(scenario)
       res = P.run_sim(P.parsets[0], progset=P.progsets[0], progset_instructions=at.ProgramInstructions(start_year=2015, stop_year=2050, coverage = coverages['coverage_' + scenario]), result_name = scenario)
-      res.export_raw(filename="C:\\Users\\Tom.walsh\\Documents\\GitHub\\cat-mnch\\paper\\results\\" + scenario + "_" + region + ".xlsx")
+      res.export_raw(filename=os.path.join(analyses_folder, 'results', scenario + "_" + region + ".xlsx"))
       scenario_results += [res]
 
     quantities = res.framework.pars.index[~res.framework.pars["ipmvt: analysis measure"].isna()].tolist()
@@ -187,8 +190,8 @@ for region in regions:
     records = defaultdict(float)
 
     epi_df = get_epi_df(scenario_results)
-    epi_df = epi_df.query(f"Year >= {mnch.analysis_window[0]} & Year <= {mnch.analysis_window[1]}")
-    epi_df.to_excel("C:\\Users\\Tom.walsh\\Documents\\GitHub\\cat-mnch\\paper\\results\\epi_df_" + region + "_" + coverage_scenario_max + ".xlsx", merge_cells=False)
+    epi_df = epi_df.query(f"Year >= {constants.analysis_window[0]} & Year <= {constants.analysis_window[1]}")
+    epi_df.to_excel(os.path.join(analyses_folder, 'results', "epi_df_" + region + "_" + coverage_scenario_max + ".xlsx"), merge_cells=False)
 
 if region == 'SA':
     region = 'South Asia'
@@ -199,8 +202,8 @@ elif region == 'SSA':
 else:
     region = 'Other LMICs'
     acronym = 'Other'
-df = pd.read_excel('C:/Users/Tom.walsh/Documents/GitHub/cat-mnch/paper/calibrations/Calibration_vals_2023.xlsx', index_col = 'code_name', sheet_name = acronym)
-model_data = pd.read_excel(f'C:/Users/Tom.walsh/Documents/GitHub/cat-mnch/paper/results/soc_{acronym}.xlsx', index_col = 2)
+df = pd.read_excel(os.path.join(analyses_folder, 'calibrations', 'Calibration_vals_2023.xlsx'), index_col = 'code_name', sheet_name = acronym)
+model_data = pd.read_excel(os.path.join(analyses_folder, 'results', f'soc_{acronym}.xlsx'), index_col = 2)
 
 an_bleeding_related_anemia = df._get_value('an_bleeding_related_anemia','Middle')
 pt_prop_sga_pt = df._get_value('pt_incident_cases_sga_pt','Middle')
