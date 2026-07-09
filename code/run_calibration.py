@@ -9,8 +9,8 @@ from coupled_model import fill_assumptions_as_data
 
 # np.seterr(all='raise')
 at.logger.setLevel('DEBUG')
-regions = ['SSA']#, 'SSA', 'SA']
-coverage_scenarios_max = ['60']
+regions = ['SA', 'SSA', 'Other']#, 'SSA', 'SA']
+coverage_scenarios_max = ['60', '90']
 
 # Folder containing the framework/, databooks/, calibrations/, progset/ and results/ subfolders.
 # Update this path to point at your own copy of the analyses folder.
