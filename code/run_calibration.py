@@ -1,11 +1,11 @@
 import atomica as at
 import pandas as pd
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import os
-from os import sep
 import numpy as np
 import constants
+from coupled_model import fill_assumptions_as_data
+
 
 # np.seterr(all='raise')
 at.logger.setLevel('DEBUG')
@@ -156,7 +156,7 @@ for region in regions:
     pset = P.load_progbook(os.path.join(analyses_folder, 'progset', 'progset.xlsx'))
     #P = get_latest_project('Optima MNCH', inclusions='MNCHdt', country='Demo')
 
-    # P = fill_assumptions_as_data(P, years=[2020])
+    P = fill_assumptions_as_data(P, years=[2020])
     # P.parsets['calibrated'] = P.settings.run_calibration(P)
 
     #Reconcile program set

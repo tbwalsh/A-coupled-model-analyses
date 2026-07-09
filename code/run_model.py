@@ -5,6 +5,7 @@ import os
 import numpy as np
 import constants
 import program_instructions
+from coupled_model import fill_assumptions_as_data
 
 # np.seterr(all='raise')
 at.logger.setLevel('DEBUG')
@@ -76,7 +77,7 @@ for region in regions:
     pset = P.load_progbook(os.path.join(analyses_folder, 'progset', 'progset.xlsx'))
     #P = get_latest_project('Optima MNCH', inclusions='MNCHdt', country='Demo')
 
-    # P = fill_assumptions_as_data(P, years=[2020])
+    P = fill_assumptions_as_data(P, years=[2020])
     # P.parsets['calibrated'] = P.settings.run_calibration(P)
 
     #Reconcile program set
@@ -128,12 +129,6 @@ for region in regions:
       #
       # filtered_rows = filtered_rows.iloc[:,0]
       # df[filtered_rows]
-
-
-### Extra scenarios ###
-# These exploratory 'scale up' ProgramInstructions objects are not used by the scenario loop above.
-# They now live in program_instructions.build_extra_scenario_instructions(coverage_scenarios) -
-# call that (with the last-loaded coverage_scenarios DataFrame) if/when they're needed again.
 
 
 
